@@ -46,6 +46,6 @@ fn test_fmt_wrapper() {
     let b = B { value: 42 };
     assert_eq!(format!("{}", a), format!("{}", b));
 
-    let a = A(3.14);
-    assert_eq!(format!("{:.3}", a), format!("{:.3}", 3.14));
+    let a = A(1.25);
+    assert_eq!(format!("{:.3}", a), format!("{:.3}", 1.25));
 }

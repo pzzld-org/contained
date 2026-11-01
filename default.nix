@@ -5,7 +5,7 @@ let
     overlays = [ (import rust-overlay) ];
   };
 
-  rustVersion = "1.93.0";
+  rustVersion = "1.99.1";
   wasmUnknownUknown = "wasm32-unknown-unknown";
   wasm32Wasi = "wasm32-wasip2";
 
@@ -30,7 +30,7 @@ let
   };
 
   common = {
-    version = "0.2.5";
+    version = "0.2.6";
     src = self;
 
     cargoLock = {

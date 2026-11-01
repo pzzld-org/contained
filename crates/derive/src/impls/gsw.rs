@@ -23,11 +23,11 @@ pub fn impl_get(
                 .iter()
                 .map(|field| _handle_field(field, generics, name));
             // inject generics to ensure the wrapper can be used with generic types
-            return quote! {
+            quote! {
                 impl #impl_generics #name #ty_generics #where_clause {
                     #(#methods)*
                 }
-            };
+            }
         }
         _ => panic!("The `Get` macro can only be derived for structs"),
     }

@@ -6,7 +6,7 @@ This namespace has been repurposed since `v0.2.0`. For security reasons, we only
 
 | Version           | Supported          |
 |:------------------|:-------------------|
-| 0.2.5 (latest)    | :white_check_mark: |
+| 0.2.6 (latest)    | :white_check_mark: |
 | <0.2.1,>=0.2.4    | :white_check_mark: |
 | <0.2.0            | :x:                |
 

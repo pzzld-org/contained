@@ -12,15 +12,20 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, rust-overlay, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+    # nixpkgs 26.11 dropped x86_64-darwin
+    flake-utils.lib.eachSystem [ "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (system:
       let
         overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { inherit system overlays; };
-        rustToolchain = pkgs.rust-bin.stable.latest.default;
+        rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        rustPlatform = pkgs.makeRustPlatform {
+          cargo = rustToolchain;
+          rustc = rustToolchain;
+        };
       in rec {
-        packages.default = pkgs.rustPlatform.buildRustPackage {
+        packages.default = rustPlatform.buildRustPackage {
           pname = "contained";
-          version = "0.2.5";
+          version = "0.2.6";
           src = self; # ./.;
           cargoLock = { lockFile = ./Cargo.lock; };
         };
@@ -30,13 +35,8 @@
             rustToolchain
             pkgs.pkg-config
             pkgs.openssl
-            pkgs.cargo
             pkgs.rust-analyzer
-            pkgs.aarch64-darwin.rstm
           ];
-          shellHook = ''
-            export CARGO_HOME=$PWD/.cargo
-          '';
         };
       });
 }
