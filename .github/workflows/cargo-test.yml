@@ -35,7 +35,7 @@ jobs:
     name: Cargo Test
     runs-on: ubuntu-latest
     env:
-      RUST_TOOLCHAIN: ${{ github.event.inputs.toolchain || 'stable' }}
+      RUST_TOOLCHAIN: ${{ github.event.inputs.toolchain }}
     outputs:
       status: ${{ steps.test.outputs.status }}
     strategy:
