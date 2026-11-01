@@ -1,10 +1,1 @@
-{ channel ? "stable", profile ? "default" }:
-with import <nixpkgs> { overlays = [ (import rust-overlay) ]; };
-mkShell {
-  nativeBuildInputs = [
-    (if channel == "nightly" then
-      rust-bin.selectLatestNightlyWith (toolchain: toolchain.${profile})
-    else
-      rust-bin.${channel}.latest.${profile})
-  ];
-}
+(builtins.getFlake (toString ./.)).devShells.${builtins.currentSystem}.default
