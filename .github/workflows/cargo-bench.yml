@@ -57,7 +57,7 @@ jobs:
           toolchain: ${{ github.event.inputs.toolchain || 'stable' }}
           override: true
       - name: Install criterion
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.85.4
         with:
           tool: cargo-criterion
       - name: Benchmark (${{ matrix.target }})
