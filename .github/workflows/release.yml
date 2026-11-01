@@ -32,9 +32,8 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout main with full history + tags
-        # Pinned to v4 (stable header-based credential helper). `token:` +
-        # `persist-credentials: true` ensure the later `git push` steps are
-        # authenticated regardless of checkout's internal plumbing.
+        # Pinned to v7. `token:` + `persist-credentials: true` ensure the later
+        # `git push` steps are authenticated regardless of checkout plumbing.
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -86,9 +85,9 @@ jobs:
           CURRENT=$(awk '/^\[workspace\.package\]/{f=1} f && /^version[[:space:]]*=/{match($0, /"([^"]+)"/, a); print a[1]; exit}' Cargo.toml)
           IFS=. read -r X Y Z <<<"$CURRENT"
 
-          if   [ "$Z" -lt 9 ]; then NX=$X;        NY=$Y;        NZ=$((Z+1)); SHIFT=patch
-          elif [ "$Y" -lt 9 ]; then NX=$X;        NY=$((Y+1)); NZ=0;        SHIFT=minor
-          else                      NX=$((X+1)); NY=0;         NZ=0;        SHIFT=major
+          if   [ "$Z" -lt 9 ]; then NX=$X;        NY=$Y;        NZ=$((Z+1)); SHIFT='patch'
+          elif [ "$Y" -lt 9 ]; then NX=$X;        NY=$((Y+1)); NZ=0;        SHIFT='minor'
+          else                      NX=$((X+1)); NY=0;         NZ=0;        SHIFT='major'
           fi
           NEXT="${NX}.${NY}.${NZ}"
 
@@ -140,13 +139,24 @@ jobs:
         run: |
           set -euo pipefail
           if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists locally; skipping create."
-          else
-            git tag -a "$TAG" -m "$TAG"
+            LOCAL_TARGET=$(git rev-parse "$TAG^{commit}")
+            if [ "$LOCAL_TARGET" != "$(git rev-parse HEAD)" ]; then
+              echo "::error::Local tag $TAG points to $LOCAL_TARGET, not release HEAD $(git rev-parse HEAD)."
+              exit 1
+            fi
           fi
-          if git ls-remote --exit-code --tags origin "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already on origin; skipping push."
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            git fetch --quiet origin "refs/tags/$TAG"
+            REMOTE_TARGET=$(git rev-parse 'FETCH_HEAD^{commit}')
+            if [ "$REMOTE_TARGET" != "$(git rev-parse HEAD)" ]; then
+              echo "::error::Remote tag $TAG points to $REMOTE_TARGET, not release HEAD $(git rev-parse HEAD)."
+              exit 1
+            fi
+            echo "Tag $TAG already on origin and points to release HEAD; skipping push."
           else
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              git tag -a "$TAG" -m "$TAG"
+            fi
             git push origin "$TAG"
           fi
 
@@ -200,14 +210,14 @@ jobs:
             git checkout -b "$PATCH" main
           fi
 
-          # ── Rust: bump [workspace.package] version + all inline axiom-* dep pins ──
+          # ── Rust: bump [workspace.package] version + all inline contained-* dep pins ──
           # Two targeted sed expressions:
           #   1. exact-line match catches `version = "X.Y.Z"` in [workspace.package]
-          #   2. axiom-line match catches `axiom-foo = { ..., version = "X.Y.Z" }`
+          #   2. contained-line match catches `contained-foo = { ..., version = "X.Y.Z" }`
           if [ -f Cargo.toml ]; then
             sed -i.bak \
               -e "s/^version = \"${CURRENT}\"$/version = \"${NEXT}\"/" \
-              -e "/axiom/s/version = \"${CURRENT}\"/version = \"${NEXT}\"/" \
+              -e "/contained/s/version = \"${CURRENT}\"/version = \"${NEXT}\"/" \
               Cargo.toml
             rm -f Cargo.toml.bak
             echo "  bumped Cargo.toml"
